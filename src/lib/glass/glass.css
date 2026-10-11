@@ -18,10 +18,29 @@
 	-webkit-backdrop-filter: var(--gw-filter) var(--gw-finish, saturate(1.4));
 	backdrop-filter: var(--gw-filter) var(--gw-finish, saturate(1.4));
 
+	/*
+	 * The rim — the "water droplet" pass.
+	 *
+	 * A single 0.5px hairline is the classic cut-glass cue. It stays, because a droplet does
+	 * have a crisp specular line. What was missing was everything around it: two heavily
+	 * negative-spread blurs (a bright bloom that fades out over ~26px, the way light scatters
+	 * through a wet meniscus) plus a thin dark ring just inside the silhouette for the
+	 * total-internal-reflection caustic. Those three layers are what turn a bevelled edge into
+	 * a wet one, and they are part of the element's own paint — they cost nothing in the
+	 * filter chain, unlike the displacement band they sit next to.
+	 *
+	 * `--gw-bloom` and `--gw-meniscus` are theme-scoped: a white bloom is the whole effect on
+	 * a dark surface and completely invisible on a light one, where the caustic ring carries
+	 * it instead. See app.css.
+	 */
 	box-shadow:
 		inset 0 0 0 0.5px var(--gw-rim, rgb(255 255 255 / 0.16)),
-		inset 0 1px 0 0 rgb(255 255 255 / 0.14),
-		inset 0 -1px 0 0 rgb(0 0 0 / 0.12),
+		inset 0 0 10px -4px var(--gw-bloom, rgb(255 255 255 / 0.3)),
+		inset 0 0 26px -14px var(--gw-bloom, rgb(255 255 255 / 0.22)),
+		inset 0 0 0 1.5px var(--gw-meniscus, rgb(0 0 0 / 0.1)),
+		/* light comes from above: a lifted top lip, a shaded bottom one */
+		inset 0 2px 3px -1px var(--gw-bloom, rgb(255 255 255 / 0.26)),
+		inset 0 -3px 6px -3px rgb(0 0 0 / 0.22),
 		0 4px 12px -6px var(--gw-shadow, rgb(0 0 0 / 0.35)),
 		0 18px 42px -18px var(--gw-shadow, rgb(0 0 0 / 0.45));
 
@@ -69,7 +88,7 @@
 }
 
 /*
- * Fallbacks.
+ * Fallbacks and escape hatches.
  *
  * If an engine cannot resolve url(#filter) it does not skip that function — it drops the
  * whole backdrop-filter declaration. What is left is the tint, so the tint alone has to be
@@ -83,6 +102,20 @@
 	.glass-surface::after {
 		opacity: 0;
 	}
+}
+
+/*
+ * Settings → Appearance → Refraction off.
+ *
+ * Swaps the nine-primitive displacement chain for a single blur. Tint, rim highlight, grain
+ * and content are untouched, so legibility is identical — only the refraction goes. The
+ * cheapest way to keep a machine with many surfaces responsive; the chain stays in the DOM
+ * but an unreferenced filter is never evaluated.
+ */
+[data-glass='off'] .glass-surface {
+	-webkit-backdrop-filter: blur(10px) var(--gw-finish, saturate(1.4));
+	backdrop-filter: blur(10px) var(--gw-finish, saturate(1.4));
+	will-change: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -62,7 +62,7 @@ ramp (the y lens, `screen`-blended so it can only add G), and a blurred 50 % gre
 | Prop | Default | What it does |
 |---|---|---|
 | `radius` | `20` | corner radius in px. **The action writes `border-radius` from this**, so the baked map and the CSS can never disagree |
-| `band` | `'auto'` | width of the refraction band at the rim. `auto` = `clamp(min(w,h) × 0.16, 6, 18)` |
+| `band` | `'auto'` | width of the refraction band at the rim. `auto` = `clamp(min(w,h) × 0.2, 8, 22)` |
 | `inset` | `0.035` | inset of the neutral island, as a fraction of height. Lower = stronger rim |
 | `scale` | `-180` | bend strength in px. Negative = the backdrop is pulled inward at the rim |
 | `chromatic` | `20` | spread between the red and blue passes. `0` disables the fringe |
@@ -120,6 +120,32 @@ original behaviour back.
 
 ---
 
+## The droplet rim
+
+The rim is built from two independent things, because one alone does not read as water.
+
+**The lens** — `band`, the blur radius of the neutral island, is how far the refraction ramps
+in from the silhouette. Narrow gives a hard bevel and a crisp specular (cut crystal). Wide
+gives a soft, curved, wet edge. Past ~20 px the ramp reaches into the middle of the panel and
+the interior stops reading as clear glass at all. Swept on a 250×160 card: 8 crisp, 14
+neutral, 18 droplet, 26 hazy.
+
+**The meniscus** — a 0.5 px hairline alone is the cut-glass cue. It stays, because a droplet
+*does* have a crisp specular line, but it needed the layers around it: a bright bloom fading
+out over ~26 px (light scattering through a wet edge), and a thin dark ring just inside the
+silhouette for the total-internal-reflection caustic. Those are `box-shadow` layers on the
+element itself, so they cost nothing in the filter chain.
+
+Both are theme-scoped, because a white bloom is the entire effect on a dark surface and
+completely invisible on a light one, where the caustic ring has to carry it instead:
+
+| Token | Dark | Light | Role |
+|---|---|---|---|
+| `--gw-bloom` | `rgb(255 255 255 / .3)` | `rgb(255 255 255 / .5)` | the wet meniscus glow |
+| `--gw-meniscus` | `rgb(0 0 0 / .1)` | `rgb(23 32 56 / .07)` | the caustic ring inside the edge |
+
+---
+
 ## Legibility
 
 The brief was "clear glass, but still readable", so contrast is treated as part of the
@@ -137,20 +163,41 @@ effect, not an afterthought:
 
 ## Performance
 
-The expensive part is not the DOM. It is that `backdrop-filter` is re-evaluated on every frame
-the backdrop changes — three displacement samples per pixel, per surface, at device pixel
-ratio. Two escape hatches, both on **Settings → Appearance**:
+The expensive part is not the DOM, and — this is the part worth knowing — it is not really the
+filter chain either. It is that `backdrop-filter` is re-evaluated on every frame the backdrop
+changes, and the backdrop is a continuously animating aurora. On the dashboard that is ~11
+surfaces covering ~5.9 Mpx of device pixels, re-filtered 60 times a second.
+
+So the cost model is **surfaces × frames**, and there is exactly one big lever: stop the
+frames. Two escape hatches, both on **Settings → Appearance**:
 
 - **Ambient motion off** — freezes the aurora, so filters only recompute when something else
-  moves. Also honours `prefers-reduced-motion`.
+  moves. Also honours `prefers-reduced-motion`. Measured: **-91 %** on the landing page,
+  **-95 %** on the dashboard.
 - **Refraction off** — swaps the displacement filter for a plain `blur()` behind the same
-  tint. Roughly a tenth of the cost per surface.
+  tint, leaving rim, grain and text untouched.
+
+### What was tried and did *not* matter
+
+Measured, not assumed. Each of these landed inside the noise floor (±1 frame), so none is
+worth doing:
+
+| Idea | Result |
+|---|---|
+| Drop `will-change: backdrop-filter` | 0 % — neutral, not the memory hog it is usually assumed to be |
+| `content-visibility: auto` to cull offscreen surfaces | 0 % — Chromium already culls offscreen backdrop-filter layers |
+| Rebuilding the filter chain less often (done anyway) | 0.06 ms → 0.04 ms per re-tune; a 90-step playground drag costs 3-6 ms *total* |
+| Throttling the aurora with `steps()` | 0 % — four blobs on different durations each step at their own phase, so the composite still changes every frame |
+
+The last one is the instructive one. It fails not because the technique is wrong but because
+"the backdrop changed" is a property of *any* pixel moving anywhere under the glass. While the
+aurora drifts, every chain runs.
+
+Shrinking individual surfaces is not where the time goes either: quadrupling the filtered
+pixel area (DPR 1× → 2× on an identical layout) moved frame time by only 8-14 %.
 
 Engines without `backdrop-filter` fall through `@supports not` to a solid tint, so text stays
 readable either way.
-
-If you are running many surfaces on a weak GPU, remove `will-change: backdrop-filter` from
-`glass.css` and use the `chip` preset for anything repeated.
 
 ---
 

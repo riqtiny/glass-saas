@@ -45,16 +45,24 @@ export const DEFAULT_TUNABLES: GlassTunables = {
 	vertical: true
 };
 
-/** Presets for the three surface sizes a SaaS UI actually uses. */
+/**
+ * Presets for the four surface sizes a SaaS UI actually uses.
+ *
+ * `band` is the blur radius of the neutral island, so it *is* the rim: it sets how far the
+ * refraction ramps in from the silhouette. Narrow reads as cut crystal — hard bevel, crisp
+ * specular. Wide reads as a water droplet — soft, wet, curved — but past ~20px the ramp
+ * reaches into the middle of the panel and the interior stops reading as clear glass.
+ * Measured on a 250x160 card: 8 crisp, 14 neutral, 18 droplet, 26 hazy. Hence these values.
+ */
 export const GLASS_PRESETS = {
-	/** Navbar / pill buttons — the shape the original recipe was tuned for. */
-	pill: { radius: 26, band: 8, scale: -180, chromatic: 20 },
+	/** Navbar / pill buttons — short, so a wide band would eat the whole thing. */
+	pill: { radius: 26, band: 11, scale: -180, chromatic: 20 },
 	/** Cards, panels, popovers. */
-	panel: { radius: 24, band: 14, scale: -150, chromatic: 18 },
-	/** Big surfaces (sidebar, chart frame) — softer band, gentler bend. */
-	window: { radius: 28, band: 18, scale: -130, chromatic: 16 },
+	panel: { radius: 24, band: 18, scale: -150, chromatic: 18 },
+	/** Big surfaces (sidebar, chart frame) — softest band, gentlest bend. */
+	window: { radius: 28, band: 22, scale: -130, chromatic: 16 },
 	/** Small chips and inputs — cheap, because refraction cost scales with area. */
-	chip: { radius: 14, band: 6, scale: -110, chromatic: 12 }
+	chip: { radius: 14, band: 9, scale: -110, chromatic: 12 }
 } as const satisfies Record<string, Partial<GlassTunables>>;
 
 export type GlassPreset = keyof typeof GLASS_PRESETS;
@@ -77,7 +85,7 @@ export type GlassPreset = keyof typeof GLASS_PRESETS;
 export function buildMap(w: number, h: number, t: GlassTunables): string {
 	const radius = Math.max(0, Math.min(t.radius, Math.min(w, h) / 2));
 	const band =
-		typeof t.band === 'number' ? t.band : clamp(Math.min(w, h) * 0.16, 6, 18);
+		typeof t.band === 'number' ? t.band : clamp(Math.min(w, h) * 0.2, 8, 22);
 	const i = h * t.inset;
 	const grey = `hsl(0 0% 50% / ${t.alpha})`;
 
@@ -109,10 +117,30 @@ function el<K extends keyof SVGElementTagNameMap>(
 	return node;
 }
 
-function buildChain(
-	filter: SVGFilterElement,
-	t: GlassTunables
-): SVGFEImageElement {
+/**
+ * Handles to the primitives we mutate after first build.
+ *
+ * The playground (GlassLab) re-tunes six surfaces on every slider input event. Rebuilding
+ * the chain each time meant destroying and recreating nine SVG nodes per surface per tick —
+ * the single worst jank source on the landing page. The topology is fixed, so build once and
+ * write attributes in place; only `chromatic` crossing zero changes the shape of the graph.
+ */
+interface Chain {
+	feImage: SVGFEImageElement;
+	displacement: SVGFEDisplacementMapElement[];
+	blur: SVGFEGaussianBlurElement;
+	/** Whether the chromatic spread is active — the only thing that changes the topology. */
+	spread: boolean;
+}
+
+/** `scale` per channel: the same map sampled at three strengths = chromatic aberration.
+ *  The fringe is zero in the centre (all three coincide) and maximal at the rim. */
+const scalesOf = (t: GlassTunables) =>
+	t.chromatic === 0
+		? [t.scale, t.scale, t.scale]
+		: [t.scale, t.scale + t.chromatic, t.scale + t.chromatic * 2];
+
+function buildChain(filter: SVGFilterElement, t: GlassTunables): Chain {
 	const feImage = el('feImage', {
 		x: 0,
 		y: 0,
@@ -123,19 +151,21 @@ function buildChain(
 	});
 	filter.append(feImage);
 
-	const passes = ['red', 'green', 'blue'] as const;
-	passes.forEach((name, i) => {
-		// Three strengths of the same map = chromatic aberration. The fringe is zero in the
-		// centre (all three coincide) and maximal at the rim, exactly like a real lens.
-		filter.append(
-			el('feDisplacementMap', {
-				in: 'SourceGraphic',
-				in2: 'map',
-				scale: t.chromatic === 0 ? t.scale : t.scale + t.chromatic * i,
-				xChannelSelector: 'R',
-				yChannelSelector: 'G',
-				result: `d${name}`
-			})
+	const [sR, sG, sB] = scalesOf(t);
+	const displacement: SVGFEDisplacementMapElement[] = [];
+
+	(['red', 'green', 'blue'] as const).forEach((name, i) => {
+		displacement.push(
+			filter.appendChild(
+				el('feDisplacementMap', {
+					in: 'SourceGraphic',
+					in2: 'map',
+					scale: [sR, sG, sB][i],
+					xChannelSelector: 'R',
+					yChannelSelector: 'G',
+					result: `d${name}`
+				})
+			)
 		);
 		filter.append(
 			el('feColorMatrix', { in: `d${name}`, type: 'matrix', result: name, values: CHANNEL_MATRIX[name] })
@@ -147,9 +177,18 @@ function buildChain(
 	filter.append(el('feBlend', { in: 'red', in2: 'green', mode: 'screen', result: 'rg' }));
 	filter.append(el('feBlend', { in: 'rg', in2: 'blue', mode: 'screen', result: 'rgb' }));
 	// ~1px softening: hides the hairline seams between the recombined channels.
-	filter.append(el('feGaussianBlur', { in: 'rgb', stdDeviation: 0.5 }));
+	const blur = filter.appendChild(el('feGaussianBlur', { in: 'rgb', stdDeviation: 0.5 }));
 
-	return feImage;
+	return { feImage, displacement, blur, spread: t.chromatic !== 0 };
+}
+
+/** Cheap path: the graph is unchanged, so only three attributes move. */
+function tuneChain(chain: Chain, t: GlassTunables) {
+	scalesOf(t).forEach((scale, i) => {
+		const node = chain.displacement[i];
+		// Writing the same value still dirties the filter in most engines.
+		if (node.getAttribute('scale') !== String(scale)) node.setAttribute('scale', String(scale));
+	});
 }
 
 /* ------------------------------------------------------------------ the action */
@@ -162,6 +201,10 @@ const nextId = () => `gw-glass-${counter.__gwGlassSeq++}`;
 
 const keyOf = (t: GlassTunables) => `${t.radius}|${t.band}|${t.inset}|${t.scale}|${t.chromatic}|${t.alpha}|${t.vertical}`;
 
+/** Which tunables the displacement map is *baked* from. A change here means the data URI has
+ *  to be rebuilt; a change to `scale`/`chromatic` alone does not. */
+const mapKeyOf = (t: GlassTunables) => `${t.radius}|${t.band}|${t.inset}|${t.alpha}|${t.vertical}`;
+
 export interface GlassAction {
 	update(options: GlassOptions): void;
 	destroy(): void;
@@ -173,6 +216,8 @@ export function glass(node: HTMLElement, options: GlassOptions = {}): GlassActio
 
 	let tunables: GlassTunables = { ...DEFAULT_TUNABLES, ...options };
 	let appliedKey = '';
+	let mapKey = '';
+	let appliedRadius = -1;
 
 	// GLASS.md §14.2: opacity:0 keeps the host invisible but present. `display:none` on the
 	// <svg> makes url(#filter) resolution inconsistent across engines.
@@ -191,51 +236,77 @@ export function glass(node: HTMLElement, options: GlassOptions = {}): GlassActio
 	defs.append(filter);
 	svg.append(defs);
 
-	let feImage: SVGFEImageElement | null = null;
+	let chain: Chain | null = null;
 
 	// One source of truth for the radius: the map is baked at a corner radius, so the CSS
 	// value and the map value must never drift apart. The action writes both. (GLASS.md §14.4)
-	node.style.setProperty('border-radius', `${tunables.radius}px`);
+	function syncRadius() {
+		if (tunables.radius === appliedRadius) return;
+		appliedRadius = tunables.radius;
+		node.style.setProperty('border-radius', `${appliedRadius}px`);
+	}
 
 	function applyChain() {
 		const key = keyOf(tunables);
 		if (key === appliedKey) return;
 		appliedKey = key;
-		filter.textContent = '';
-		feImage = buildChain(filter, tunables);
-		// GLASS.md §5: the tint is painted *on top of* the refraction, not below it.
-		node.style.setProperty('--gw-filter', `url(#${filterId})`);
+		syncRadius();
+
+		// Rebuild the graph only when its *shape* changes — i.e. when the chromatic spread is
+		// switched on or off. Every other tweak is three attribute writes.
+		if (!chain || chain.spread !== (tunables.chromatic !== 0)) {
+			filter.textContent = '';
+			chain = buildChain(filter, tunables);
+			// GLASS.md §5: the tint is painted *on top of* the refraction, not below it.
+			node.style.setProperty('--gw-filter', `url(#${filterId})`);
+		} else {
+			tuneChain(chain, tunables);
+		}
 		syncMap();
 	}
 
 	// The map's gradients are in user units of the panel's own pixel size, so it has to be
 	// rebuilt whenever that size changes. String concat + setAttribute — do not optimise.
 	function syncMap() {
-		if (!feImage) return;
+		if (!chain) return;
 		const { width, height } = node.getBoundingClientRect();
 		if (!width || !height) return; // display:none — never build a 0x0 map
-		const svg = buildMap(width, height, tunables);
+		// Same size, same lens — the URI would come out byte-identical, so skip the decode.
+		const key = `${mapKeyOf(tunables)}|${width}x${height}`;
+		if (key === mapKey) return;
+		mapKey = key;
+		const map = buildMap(width, height, tunables);
 		// encodeURIComponent is required, not cosmetic: the data URI contains `#`, `<` and `>`.
-		feImage.setAttribute('href', `data:image/svg+xml,${encodeURIComponent(svg)}`);
+		chain.feImage.setAttribute('href', `data:image/svg+xml,${encodeURIComponent(map)}`);
 	}
 
 	if (!node.contains(svg)) node.append(svg);
 
-	const ro = new ResizeObserver(syncMap);
+	// Coalesce map rebuilds to one per frame. A slider drag fires an input event per pointer
+	// move, and the landing page re-tunes six surfaces at a time.
+	let frame = 0;
+	function scheduleMap() {
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			syncMap();
+		});
+	}
+
+	const ro = new ResizeObserver(scheduleMap);
 	ro.observe(node);
-	document.fonts?.ready.then(syncMap);
+	document.fonts?.ready.then(scheduleMap);
 	applyChain();
 
 	return {
 		update(next) {
 			tunables = { ...tunables, ...next };
-			if (tunables.radius !== Number(node.style.borderRadius.replace('px', ''))) {
-				node.style.setProperty('border-radius', `${tunables.radius}px`);
-			}
+			syncRadius();
 			applyChain();
 		},
 		destroy() {
 			ro.disconnect();
+			if (frame) cancelAnimationFrame(frame);
 			svg.remove();
 		}
 	};

@@ -152,12 +152,16 @@
 		background: rgb(3 5 11 / 0.5);
 		backdrop-filter: blur(4px) saturate(0.8);
 	}
+	/*
+	 * Transform only, no opacity. An `opacity < 1` ancestor becomes a Backdrop Root, which
+	 * would leave the panel refracting nothing for the whole animation — the glass would
+	 * snap in a frame late, on every open. `transform` is explicitly safe (README rule 2).
+	 */
 	.palette[open] {
 		animation: pop 0.28s var(--ease);
 	}
 	@keyframes pop {
 		from {
-			opacity: 0;
 			transform: translateY(-10px) scale(0.97);
 		}
 	}

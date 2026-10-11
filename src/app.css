@@ -31,6 +31,10 @@
 	--gw-tint: rgb(10 13 22 / 0.46);
 	--gw-tint-solid: #121624;
 	--gw-rim: rgb(255 255 255 / 0.16);
+	/* The wet meniscus. On a dark surface a droplet reads as a bright bloom fading inward,
+	   so the bloom carries the look and the dark ring only grounds it. */
+	--gw-bloom: rgb(255 255 255 / 0.3);
+	--gw-meniscus: rgb(0 0 0 / 0.1);
 	--gw-shadow: rgb(0 0 0 / 0.5);
 	--gw-rim-strong: rgb(255 255 255 / 0.14);
 
@@ -78,6 +82,10 @@
 	--gw-tint: rgb(255 255 255 / 0.6);
 	--gw-tint-solid: #fbfcff;
 	--gw-rim: rgb(255 255 255 / 0.9);
+	/* Inverted: a white bloom on a white panel is invisible, so here the droplet edge is
+	   carried by the dark caustic ring and the bloom only lifts the top lip. */
+	--gw-bloom: rgb(255 255 255 / 0.5);
+	--gw-meniscus: rgb(23 32 56 / 0.07);
 	--gw-shadow: rgb(23 32 56 / 0.18);
 	--gw-rim-strong: rgb(255 255 255 / 0.85);
 
