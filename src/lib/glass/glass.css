@@ -1,0 +1,92 @@
+/*
+ * The glass host.
+ *
+ * Layer order inside one surface:
+ *   1. the filtered backdrop  (the refraction)
+ *   2. the tint               (background, painted on top of the refraction)
+ *   3. inset hairline + rim highlight + drop shadows
+ *   4. a very faint grain, to kill banding across the smooth ramp
+ *   5. .glass-inner          (content — backdrop-filter never touches children)
+ */
+
+.glass-surface {
+	position: relative;
+	display: block;
+	overflow: hidden;
+
+	background: var(--gw-tint, var(--glass-tint));
+	-webkit-backdrop-filter: var(--gw-filter) var(--gw-finish, saturate(1.4));
+	backdrop-filter: var(--gw-filter) var(--gw-finish, saturate(1.4));
+
+	box-shadow:
+		inset 0 0 0 0.5px var(--gw-rim, rgb(255 255 255 / 0.16)),
+		inset 0 1px 0 0 rgb(255 255 255 / 0.14),
+		inset 0 -1px 0 0 rgb(0 0 0 / 0.12),
+		0 4px 12px -6px var(--gw-shadow, rgb(0 0 0 / 0.35)),
+		0 18px 42px -18px var(--gw-shadow, rgb(0 0 0 / 0.45));
+
+	/* A stacking context is what keeps the z-index:-10 filter host from escaping. */
+	contain: layout style paint;
+
+	/* The backdrop animates, so the filter chain is re-evaluated every frame anyway; pinning
+	   the layer means it is never rebuilt from scratch. Costs memory permanently — drop this
+	   line if you are running many surfaces on a low-end GPU. */
+	will-change: backdrop-filter;
+}
+
+/* The filter host: invisible, non-interactive, behind the content. */
+.glass-svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	opacity: 0;
+	z-index: -10;
+	transform: translateZ(0);
+}
+
+/* Grain — sits above the tint, below the content. Set --grain: 0 to disable. */
+.glass-surface::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	opacity: var(--grain, 0.035);
+	mix-blend-mode: overlay;
+	background-image: var(--gw-grain);
+	background-size: 180px 180px;
+}
+
+/* Content layer. Never filtered — this is why labels stay razor sharp over a bending
+   backdrop without any extra work. */
+.glass-inner {
+	position: relative;
+	z-index: 1;
+	height: 100%;
+	width: 100%;
+}
+
+/*
+ * Fallbacks.
+ *
+ * If an engine cannot resolve url(#filter) it does not skip that function — it drops the
+ * whole backdrop-filter declaration. What is left is the tint, so the tint alone has to be
+ * legible. Two tiers: the default tint, and a heavier one for engines with no
+ * backdrop-filter at all.
+ */
+@supports not (backdrop-filter: blur(1px)) {
+	.glass-surface {
+		background: var(--gw-tint-solid, var(--glass-tint-solid));
+	}
+	.glass-surface::after {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.glass-surface {
+		transition: none !important;
+	}
+}

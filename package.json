@@ -1,0 +1,26 @@
+{
+  "name": "glasswing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Glasswing — a Svelte 5 SaaS template built on a real liquid-glass refraction (SVG displacement map), not a backdrop blur.",
+  "imports": {
+    "#lib/*": "./src/lib/*"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "^3.0.1",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.6",
+    "typescript": "^6.0.0",
+    "vite": "^8.3.4"
+  }
+}

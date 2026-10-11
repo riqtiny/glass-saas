@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShuttleTV navbar — replica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&display=swap">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#000;overflow:hidden;
+  font-family:Geist,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+
+/* ============ moving background (poster wall, like the site's hero carousel) ============ */
+.wall{position:fixed;inset:0;z-index:0;display:flex;flex-direction:column;justify-content:center;gap:8px;overflow:hidden}
+.strip{display:flex;gap:8px;width:max-content;animation:slide var(--dur) linear infinite}
+.strip.rev{animation-direction:reverse}
+@keyframes slide{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+.card{flex:0 0 auto;width:172px;height:250px;border-radius:8px;position:relative;overflow:hidden;
+  background:linear-gradient(165deg,var(--a),var(--b))}
+.card::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(58% 42% at 68% 22%,#ffffff33,#0000 68%),linear-gradient(0deg,#000000a6 0 34%,#0000 72%)}
+.card b{position:absolute;left:10px;bottom:9px;z-index:1;font-size:11px;font-weight:500;letter-spacing:.1em;
+  text-transform:uppercase;color:#ffffffd9;text-shadow:0 1px 6px #000c}
+
+/* ============ navbar — values taken 1:1 from shuttletv.su ============ */
+/* nav wrapper: fixed top-4 left-0 right-0 z-[25] flex justify-center px-4 */
+.app-nav{position:fixed;top:16px;left:0;right:0;z-index:25;display:flex;justify-content:center;padding:0 16px}
+
+/* glass shell: h 48, r 20, p 2px 4px, gap 4, bg rgba(0,0,0,.2), backdrop-filter url(#…) saturate(1) */
+.glass{
+  position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  height:48px;gap:4px;padding:2px 4px;border-radius:20px;
+  background:rgba(0,0,0,.2);
+  -webkit-backdrop-filter:url(#glass-filter) saturate(1);
+  backdrop-filter:url(#glass-filter) saturate(1);
+  box-shadow:rgba(255,255,255,.1) 0 0 0 .5px inset, rgba(0,0,0,.1) 0 4px 16px, rgba(0,0,0,.08) 0 8px 24px;
+  transition:opacity 260ms ease-out;
+  will-change:backdrop-filter,transform;transform:translateZ(0);backface-visibility:hidden;
+  perspective:1000px;contain:layout style paint;
+}
+.glass:focus-visible{outline:2px solid #0A84FF;outline-offset:2px}
+/* the filter host sits behind the content, invisible itself */
+.glass-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;z-index:-10;
+  transform:translateZ(0);will-change:transform}
+.glass-inner{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;padding:4px;border-radius:inherit}
+
+.brand{display:flex;align-items:center;padding:0 8px;margin-right:4px}
+.brand img{display:block;width:22px;height:22px;opacity:.9}
+
+.links{display:flex;align-items:center}
+.links a{position:relative;padding:6px 12px;line-height:24px;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.links span{position:relative;z-index:10;font-size:13px;font-weight:500;line-height:19.5px;
+  color:rgb(255 255 255 / .7);transition:color .15s ease}
+.links a:hover span,.links a:focus-visible span{color:#fff}
+.links a[aria-current="page"] span{color:#fff}
+
+.tools{display:flex;align-items:center;gap:12px;padding:0 8px}
+.tools a,.tools button{display:flex;align-items:center;padding:0;border:0;background:none;color:inherit;cursor:pointer}
+.tools svg{width:16px;height:16px;color:rgb(255 255 255 / .7);transition:color .15s ease}
+.tools a:hover svg,.tools button:hover svg,.tools a:focus-visible svg,.tools button:focus-visible svg{color:#fff}
+
+@media (max-width:767px){ .app-nav{display:none} }   /* site swaps to a mobile bar at md */
+@media (prefers-reduced-motion:reduce){ .strip{animation:none} }
+</style>
+</head>
+<body>
+
+<div class="wall" id="wall" aria-hidden="true"></div>
+
+<nav class="app-nav" data-app-nav="true" aria-label="Main">
+  <div class="glass" id="glass" tabindex="-1">
+    <!-- liquid-glass refraction: one displacement map, sampled at three scales for chromatic split -->
+    <svg class="glass-svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="glass-filter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+          <feImage id="glass-map" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="map"/>
+          <feDisplacementMap in="SourceGraphic" in2="map" result="dispRed"   scale="-180" xChannelSelector="R" yChannelSelector="G"/>
+          <feColorMatrix in="dispRed"   type="matrix" result="red"   values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+          <feDisplacementMap in="SourceGraphic" in2="map" result="dispGreen" scale="-170" xChannelSelector="R" yChannelSelector="G"/>
+          <feColorMatrix in="dispGreen" type="matrix" result="green" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"/>
+          <feDisplacementMap in="SourceGraphic" in2="map" result="dispBlue"  scale="-160" xChannelSelector="R" yChannelSelector="G"/>
+          <feColorMatrix in="dispBlue"  type="matrix" result="blue"  values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"/>
+          <feBlend in="red" in2="green" mode="screen" result="rg"/>
+          <feBlend in="rg"  in2="blue"  mode="screen" result="output"/>
+          <feGaussianBlur in="output" stdDeviation="0.5"/>
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="glass-inner">
+      <a class="brand" href="/" aria-label="ShuttleTV">
+        <img src="rocket.png" width="22" height="22" alt="ShuttleTV" decoding="async">
+      </a>
+
+      <div class="links">
+        <a href="/" aria-current="page"><span>Home</span></a>
+        <a href="/movies"><span>Movies</span></a>
+        <a href="/series"><span>Series</span></a>
+        <a href="/discover"><span>Discover</span></a>
+        <a href="/list"><span>List</span></a>
+      </div>
+
+      <div class="tools">
+        <a href="/search" aria-label="Search">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>
+          </svg>
+        </a>
+        <button type="button" aria-label="New episodes">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
+            <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
+          </svg>
+        </button>
+        <a href="/settings" aria-label="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </a>
+        <button type="button" aria-label="Sign in">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="17" x2="22" y1="8" y2="13"/><line x1="22" x2="17" y1="8" y2="13"/>
+          </svg>
+        </button>
+        <a href="https://discord.gg/" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M20.317 4.3698a19.7913 19.7913 0 0 0-4.8851-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+/* ---- displacement map, rebuilt at the shell's live size (same recipe as the source) ---- */
+const RADIUS = 20, BLUR = 7, INSET_RATIO = 0.035, GREY = 'hsl(0 0% 50% / 0.93)';
+const glass = document.getElementById('glass');
+const feImage = document.getElementById('glass-map');
+
+function buildMap(w, h) {
+  const i = h * INSET_RATIO;
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="x" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0000"/><stop offset="100%" stop-color="red"/>
+    </linearGradient>
+    <linearGradient id="y" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0000"/><stop offset="100%" stop-color="blue"/>
+    </linearGradient>
+  </defs>
+  <rect width="${w}" height="${h}" fill="black"/>
+  <rect width="${w}" height="${h}" rx="${RADIUS}" fill="url(#x)"/>
+  <rect width="${w}" height="${h}" rx="${RADIUS}" fill="url(#y)" style="mix-blend-mode:screen"/>
+  <rect x="${i}" y="${i}" width="${w - i * 2}" height="${h - i * 2}" rx="${RADIUS}" fill="${GREY}" style="filter:blur(${BLUR}px)"/>
+</svg>`;
+}
+function syncMap() {
+  const {width, height} = glass.getBoundingClientRect();
+  if (!width || !height) return;
+  feImage.setAttribute('href', 'data:image/svg+xml,' + encodeURIComponent(buildMap(width, height)));
+}
+new ResizeObserver(syncMap).observe(glass);
+document.fonts?.ready.then(syncMap);
+syncMap();
+
+/* ---- poster wall ---- */
+const PAIRS = [['#7d1f2b','#240a0f'],['#22414e','#0a1419'],['#523383','#150d24'],['#84571b','#1f1304'],
+  ['#1c5642','#071510'],['#872e5b','#1f0916'],['#293c76','#090f22'],['#6a1313','#1a0404'],
+  ['#3c561f','#101705'],['#104857','#03141a'],['#523067','#150b1b'],['#764711','#1c1003']];
+const NAMES = ['Nightfall','Blue Hour','Iron Sky','The Divide','Cold Harbor','Ashen','Lantern','Deep Field',
+  'Vector','Harrow','Static','Solaris Bay','Undertow','The Ninth','Pale Kings','Drift'];
+const wall = document.getElementById('wall');
+[['64s',0],['84s',1],['72s',0],['96s',1],['78s',0]].forEach(([dur, rev], r) => {
+  const strip = document.createElement('div');
+  strip.className = 'strip' + (rev ? ' rev' : '');
+  strip.style.setProperty('--dur', dur);
+  const cards = Array.from({length: 12}, (_, i) => {
+    const [a, b] = PAIRS[(i + r * 5) % PAIRS.length];
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.setProperty('--a', a);
+    el.style.setProperty('--b', b);
+    el.innerHTML = '<b>' + NAMES[(i + r * 3) % NAMES.length] + '</b>';
+    return el;
+  });
+  cards.forEach(c => strip.append(c));
+  cards.forEach(c => strip.append(c.cloneNode(true)));
+  wall.append(strip);
+});
+</script>
+</body>
+</html>

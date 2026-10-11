@@ -1,0 +1,522 @@
+/* ============================================================================
+   Glasswing — design tokens + base layer
+   ========================================================================= */
+
+/* Shared grain. Both the aurora and every glass surface sample this one tile. */
+:root {
+	--gw-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+
+	--font-sans:
+		Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+	--step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.83rem);
+	--step-0: clamp(0.875rem, 0.85rem + 0.12vw, 0.94rem);
+	--step-1: clamp(1rem, 0.96rem + 0.2vw, 1.12rem);
+	--step-2: clamp(1.25rem, 1.1rem + 0.7vw, 1.6rem);
+	--step-3: clamp(1.6rem, 1.3rem + 1.4vw, 2.4rem);
+	--step-4: clamp(2.1rem, 1.5rem + 2.6vw, 3.6rem);
+	--step-5: clamp(2.6rem, 1.4rem + 4.6vw, 5rem);
+
+	--ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------------------------------------------------------------- dark theme */
+:root,
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	--aurora-base: radial-gradient(120% 80% at 50% -10%, #131a33 0%, #080a12 55%, #05060b 100%);
+
+	--gw-tint: rgb(10 13 22 / 0.46);
+	--gw-tint-solid: #121624;
+	--gw-rim: rgb(255 255 255 / 0.16);
+	--gw-shadow: rgb(0 0 0 / 0.5);
+	--gw-rim-strong: rgb(255 255 255 / 0.14);
+
+	--text: rgb(255 255 255 / 0.97);
+	--text-dim: rgb(255 255 255 / 0.78);
+	--text-faint: rgb(255 255 255 / 0.58);
+	--text-inverse: #080b14;
+
+	/* Semantic surface overrides — a panel that must read as "dangerous" without
+	   darkening the text underneath it in the other theme. */
+	--danger-tint: rgb(74 16 28 / 0.44);
+	--danger-rim: rgb(255 150 170 / 0.2);
+
+	/* The "this is the recommended plan" surface. Also theme-scoped, for the same reason. */
+	--accent-tint: rgb(38 45 92 / 0.5);
+	--accent-rim: rgb(180 195 255 / 0.3);
+
+	--accent: #8b9dff;
+	--accent-2: #37d7f0;
+	--accent-soft: rgb(139 157 255 / 0.16);
+	--positive: #52e0a3;
+	--negative: #ff8095;
+	--warning: #ffc76b;
+
+	--hairline: rgb(255 255 255 / 0.1);
+	--hairline-strong: rgb(255 255 255 / 0.18);
+	--grid-line: rgb(255 255 255 / 0.055);
+	--vignette: rgb(3 4 9 / 0.55);
+	--blob-opacity: 0.55;
+	--blob-1: #3b4dff;
+	--blob-2: #00c2d6;
+	--blob-3: #b43fd6;
+	--blob-4: #ff7a3d;
+
+	--text-shadow: 0 1px 2px rgb(0 0 0 / 0.32);
+	--focus: #7dd3fc;
+}
+
+/* --------------------------------------------------------------- light theme */
+[data-theme='light'] {
+	color-scheme: light;
+
+	--aurora-base: radial-gradient(120% 80% at 50% -10%, #ffffff 0%, #eef1fa 55%, #e6eaf6 100%);
+
+	--gw-tint: rgb(255 255 255 / 0.6);
+	--gw-tint-solid: #fbfcff;
+	--gw-rim: rgb(255 255 255 / 0.9);
+	--gw-shadow: rgb(23 32 56 / 0.18);
+	--gw-rim-strong: rgb(255 255 255 / 0.85);
+
+	--text: rgb(11 16 30 / 0.95);
+	--text-dim: rgb(11 16 30 / 0.72);
+	--text-faint: rgb(11 16 30 / 0.55);
+	--text-inverse: #ffffff;
+
+	--danger-tint: rgb(255 233 238 / 0.62);
+	--danger-rim: rgb(214 58 86 / 0.28);
+
+	--accent-tint: rgb(226 232 255 / 0.72);
+	--accent-rim: rgb(68 87 232 / 0.3);
+
+	--accent: #4457e8;
+	--accent-2: #0891a8;
+	--accent-soft: rgb(68 87 232 / 0.12);
+	--positive: #0f9d63;
+	--negative: #d63a56;
+	--warning: #b3730a;
+
+	--hairline: rgb(15 23 42 / 0.1);
+	--hairline-strong: rgb(15 23 42 / 0.16);
+	--grid-line: rgb(15 23 42 / 0.05);
+	--vignette: rgb(148 163 184 / 0.3);
+	--blob-opacity: 0.45;
+	--blob-1: #93a5ff;
+	--blob-2: #7fe3f2;
+	--blob-3: #eaa8f5;
+	--blob-4: #ffc79a;
+
+	--text-shadow: 0 1px 1px rgb(255 255 255 / 0.7);
+	--focus: #2563eb;
+}
+
+/* ------------------------------------------------------------------- reset */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+* {
+	margin: 0;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	scrollbar-color: var(--text-faint) transparent;
+}
+
+body {
+	min-height: 100dvh;
+	background: #05060b;
+	color: var(--text);
+	font-family: var(--font-sans);
+	font-size: var(--step-0);
+	line-height: 1.55;
+	letter-spacing: -0.011em;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+[data-theme='light'] body {
+	background: #e9edf7;
+}
+
+img,
+svg {
+	display: block;
+	max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+	letter-spacing: inherit;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-weight: 600;
+	line-height: 1.12;
+	letter-spacing: -0.028em;
+	text-wrap: balance;
+}
+
+p {
+	text-wrap: pretty;
+}
+
+::selection {
+	background: var(--accent);
+	color: var(--text-inverse);
+}
+
+:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+/* ------------------------------------------------------------------ helpers */
+
+/* The app and marketing content must not sit on the aurora's z-index 0. */
+.shell {
+	position: relative;
+	z-index: 1;
+}
+
+.page {
+	width: 100%;
+	max-width: 1180px;
+	margin-inline: auto;
+	padding: 0 24px;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.skip-link {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	z-index: 100;
+	padding: 10px 16px;
+	border-radius: 12px;
+	background: var(--gw-tint-solid);
+	transform: translateY(-200%);
+}
+.skip-link:focus-visible {
+	transform: none;
+}
+
+.muted {
+	color: var(--text-dim);
+}
+.faint {
+	color: var(--text-faint);
+}
+.eyebrow {
+	font-size: var(--step--1);
+	font-weight: 600;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+.gradient-text {
+	background: linear-gradient(100deg, var(--text) 20%, var(--accent) 70%, var(--accent-2));
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+/* ------------------------------------------------------------------ buttons */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 38px;
+	padding: 0 16px;
+	border: 0;
+	border-radius: 11px;
+	font-size: var(--step-0);
+	font-weight: 550;
+	cursor: pointer;
+	white-space: nowrap;
+	transition:
+		transform 0.18s var(--ease),
+		background-color 0.18s var(--ease),
+		box-shadow 0.18s var(--ease);
+}
+.btn:active {
+	transform: scale(0.97);
+}
+.btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.btn--primary {
+	color: var(--text-inverse);
+	background: linear-gradient(140deg, var(--accent) 0%, var(--accent-2) 130%);
+	box-shadow:
+		0 1px 0 rgb(255 255 255 / 0.35) inset,
+		0 8px 22px -10px var(--accent);
+}
+.btn--primary:hover {
+	box-shadow:
+		0 1px 0 rgb(255 255 255 / 0.35) inset,
+		0 12px 28px -10px var(--accent);
+}
+
+.btn--quiet {
+	color: var(--text-dim);
+	background: transparent;
+}
+.btn--quiet:hover {
+	color: var(--text);
+	background: var(--hairline);
+}
+
+.btn--outline {
+	color: var(--text);
+	background: var(--hairline);
+	box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+.btn--outline:hover {
+	background: var(--hairline-strong);
+}
+
+.btn--danger {
+	color: var(--negative);
+	background: color-mix(in oklab, var(--negative) 14%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--negative) 34%, transparent);
+}
+
+.btn--sm {
+	height: 32px;
+	padding: 0 12px;
+	font-size: var(--step--1);
+	border-radius: 9px;
+}
+.btn--lg {
+	height: 46px;
+	padding: 0 22px;
+	font-size: var(--step-1);
+	border-radius: 14px;
+}
+.btn--block {
+	width: 100%;
+}
+
+/* ------------------------------------------------------------------- inputs */
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.field > span {
+	font-size: var(--step--1);
+	font-weight: 550;
+	color: var(--text-dim);
+}
+.input {
+	width: 100%;
+	min-width: 0;
+	height: 38px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 11px;
+	color: var(--text);
+	background: var(--hairline);
+	box-shadow: inset 0 0 0 1px var(--hairline-strong);
+	transition: box-shadow 0.16s var(--ease), background-color 0.16s var(--ease);
+}
+select.input {
+	/* the native arrow needs room, and the label must never push past the field */
+	appearance: none;
+	padding-right: 30px;
+	background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-position: right 15px center, right 10px center;
+	background-size: 5px 5px, 5px 5px;
+	background-repeat: no-repeat;
+}
+.input::placeholder {
+	color: var(--text-faint);
+}
+.input:focus-visible {
+	outline: none;
+	background: transparent;
+	box-shadow:
+		inset 0 0 0 1px var(--accent),
+		0 0 0 3px var(--accent-soft);
+}
+textarea.input {
+	height: auto;
+	padding: 10px 12px;
+	resize: vertical;
+	line-height: 1.6;
+}
+
+/* range — the glass lab sliders */
+.range {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 22px;
+	background: transparent;
+	cursor: grab;
+}
+.range::-webkit-slider-runnable-track {
+	height: 5px;
+	border-radius: 999px;
+	background: var(--hairline-strong);
+}
+.range::-moz-range-track {
+	height: 5px;
+	border-radius: 999px;
+	background: var(--hairline-strong);
+}
+.range::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	margin-top: -5.5px;
+	border-radius: 50%;
+	background: linear-gradient(140deg, var(--accent), var(--accent-2));
+	box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+}
+.range::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	border: 0;
+	border-radius: 50%;
+	background: linear-gradient(140deg, var(--accent), var(--accent-2));
+	box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+}
+.range:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 4px;
+	border-radius: 999px;
+}
+
+/* -------------------------------------------------------------------- misc */
+.kbd {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px 6px;
+	border-radius: 6px;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	line-height: 16px;
+	color: var(--text-dim);
+	background: var(--hairline);
+	box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+
+.badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 9px;
+	border-radius: 999px;
+	font-size: var(--step--1);
+	font-weight: 550;
+	line-height: 1.5;
+	color: var(--text-dim);
+	background: var(--hairline);
+	box-shadow: inset 0 0 0 1px var(--hairline);
+	white-space: nowrap;
+}
+.badge--accent {
+	color: var(--accent);
+	background: var(--accent-soft);
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 28%, transparent);
+}
+.badge--positive {
+	color: var(--positive);
+	background: color-mix(in oklab, var(--positive) 14%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--positive) 30%, transparent);
+}
+.badge--negative {
+	color: var(--negative);
+	background: color-mix(in oklab, var(--negative) 14%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--negative) 30%, transparent);
+}
+
+.dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	flex: none;
+}
+
+/* Avatars are global: used from several components, so they cannot be scoped. */
+.avatar {
+	display: grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	flex: none;
+	border-radius: 50%;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	color: #0a0f1c;
+	background: linear-gradient(140deg, var(--accent), var(--accent-2));
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+.avatar--sm {
+	width: 30px;
+	height: 30px;
+	font-size: 10px;
+}
+
+.divider {
+	height: 1px;
+	background: var(--hairline);
+	border: 0;
+}
+
+/* Text inside a glass surface gets a soft shadow: the backdrop under it is moving, and
+   the whole point of the brief is "clear glass, but still readable". */
+.glass-surface :where(h1, h2, h3, h4, p, span, strong, em, a, button, label, td, th, li, small, code)
+{
+	text-shadow: var(--text-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
